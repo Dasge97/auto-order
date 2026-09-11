@@ -56,7 +56,7 @@ Las pruebas usan una base de datos aparte y rehacen su esquema solas. No llaman 
 
 El despliegue sigue el flujo de CodeHive: el código se edita en local, se sube a GitHub y en el servidor solo se hace pull, sync y redeploy.
 
-Los tres contenedores son la aplicación, el worker y PostgreSQL. Se levantan con `docker compose up -d --build` desde la carpeta de despliegue.
+Los tres contenedores son la aplicación, el worker y PostgreSQL. El comando exacto está en el README_DEPLOY.md del repositorio fuente del servidor, que no se sube a GitHub.
 
 Antes hay que crear ahí un `.env.local` con:
 

@@ -17,4 +17,8 @@
 # Capturas y archivos sueltos de pruebas manuales.
 /*.png
 /.playwright-mcp/
+
+# Documentacion de despliegue con rutas y puertos internos del servidor.
+/README_DEPLOY.md
+/docker-compose.override.generated.yml
 ###< auto-order ###

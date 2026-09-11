@@ -1,0 +1,71 @@
+# Despliegue de Auto-order en code-hive.
+#
+# Tres contenedores: la aplicación, el worker que lee las cartas y PostgreSQL.
+# El puerto lo publica docker-compose.override.generated.yml, y quien saca el
+# servicio a Internet es Traefik.
+#
+# Se levanta siempre con --env-file .env, para que la contraseña de la base de datos
+# salga del mismo fichero que el resto de la configuración.
+services:
+  app:
+    build: .
+    container_name: deployment_auto-order-app-1
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-autoorder}:${POSTGRES_PASSWORD:-autoorder}@database:5432/${POSTGRES_DB:-autoorder}?serverVersion=17&charset=utf8"
+    volumes:
+      - auto_order_uploads:/var/www/html/var/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  worker:
+    build: .
+    container_name: deployment_auto-order-worker-1
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-autoorder}:${POSTGRES_PASSWORD:-autoorder}@database:5432/${POSTGRES_DB:-autoorder}?serverVersion=17&charset=utf8"
+    # Leer una carta tarda, así que se hace aquí y no en la petición web. El worker se
+    # reinicia cada hora para no acumular memoria.
+    command: php bin/console messenger:consume async --time-limit=3600 --memory-limit=256M -vv
+    volumes:
+      - auto_order_uploads:/var/www/html/var/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: postgres:17-alpine
+    container_name: deployment_auto-order-database-1
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-autoorder}
+      POSTGRES_USER: ${POSTGRES_USER:-autoorder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autoorder}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-autoorder}", "-U", "${POSTGRES_USER:-autoorder}"]
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - auto_order_database:/var/lib/postgresql/data:rw
+
+volumes:
+  # Nombre fijo: un redespliegue no puede llevarse por delante los pedidos ni las
+  # cartas subidas.
+  auto_order_database:
+    name: auto_order_database
+  auto_order_uploads:
+    name: auto_order_uploads
