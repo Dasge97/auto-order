@@ -19,10 +19,12 @@ php bin/console doctrine:migrations:migrate --no-interaction
 Pon tus claves en `.env.local`, que no se sube a git:
 
 ```
-OPENAI_API_KEY=sk-...
-RETELL_WEBHOOK_SECRET=la-clave-de-tu-cuenta-de-retell
+MENU_API_KEY=sk-...
+RETELL_WEBHOOK_SECRET=el-secreto-del-webhook-de-retell
 RETELL_TOOL_TOKEN=una-cadena-larga-que-elijas-tú
 ```
+
+En local no se pueden leer cartas en PDF salvo que tengas `pdftoppm` instalado, que viene en el paquete poppler-utils. En el servidor sí está, porque lo instala la imagen de Docker. Sin él, sube imágenes o pega el texto.
 
 Arranca el servidor y el worker en dos terminales:
 
@@ -64,11 +66,16 @@ APP_PORT=4141
 POSTGRES_PASSWORD=contraseña-larga
 ADMIN_USER=admin
 ADMIN_PASSWORD_HASH='...'
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-5
+MENU_API_BASE_URL=https://auth2api.code-hive.space/v1
+MENU_API_KEY=sk-...
+MENU_MODEL=claude-sonnet-5
+MENU_SCHEMA_NAME=
+RETELL_API_KEY=...
 RETELL_WEBHOOK_SECRET=...
 RETELL_TOOL_TOKEN=...
 ```
+
+La carta se lee a través de auth2api, el proxy de code-hive, que habla el formato de chat de OpenAI. `MENU_SCHEMA_NAME` se deja vacío porque ese proxy rechaza la petición si el esquema lleva nombre. Contra la API de OpenAI de verdad hay que ponerle un valor, por ejemplo `carta`.
 
 El hash de la contraseña se genera con:
 

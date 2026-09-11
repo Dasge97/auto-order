@@ -5,6 +5,11 @@ framework:
         transports:
             async:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    # Si el worker muere con una carta a medias, el trabajo vuelve a la
+                    # cola pasados cinco minutos. Por defecto tarda una hora, y la carta
+                    # se queda en "En cola" todo ese rato.
+                    redeliver_timeout: 300
                 retry_strategy:
                     max_retries: 2
                     delay: 5000

@@ -5,8 +5,10 @@ ENV APP_ENV=prod \
     APP_DEBUG=0 \
     COMPOSER_ALLOW_SUPERUSER=1
 
+# poppler-utils trae pdftoppm, que convierte cada página de un PDF en una imagen.
+# Sin él no se pueden leer las cartas que llegan en PDF.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git unzip libpq-dev libicu-dev libzip-dev libpng-dev \
+        git unzip libpq-dev libicu-dev libzip-dev libpng-dev poppler-utils \
     && docker-php-ext-configure intl \
     && docker-php-ext-install -j"$(nproc)" pdo_pgsql intl zip gd opcache \
     && a2enmod rewrite \
@@ -36,7 +38,7 @@ COPY . .
 
 RUN composer dump-autoload --classmap-authoritative --no-dev \
     && composer run-script --no-dev post-install-cmd \
-    && mkdir -p var/uploads var/cache var/log \
+    && mkdir -p var/uploads var/pdf-paginas var/cache var/log \
     && chown -R www-data:www-data var
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint

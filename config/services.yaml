@@ -15,12 +15,22 @@ services:
         arguments:
             $uploadDir: '%app.upload_dir%'
 
-    App\Menu\OpenAiMenuExtractor:
+    App\Command\ReadMenuCommand:
         arguments:
-            $apiKey: '%env(OPENAI_API_KEY)%'
-            $model: '%env(OPENAI_MODEL)%'
+            $uploadDir: '%app.upload_dir%'
 
-    App\Menu\MenuExtractorInterface: '@App\Menu\OpenAiMenuExtractor'
+    App\Menu\PdfToImages:
+        arguments:
+            $workDir: '%kernel.project_dir%/var/pdf-paginas'
+
+    App\Menu\ChatCompletionsMenuExtractor:
+        arguments:
+            $apiKey: '%env(MENU_API_KEY)%'
+            $model: '%env(MENU_MODEL)%'
+            $baseUrl: '%env(MENU_API_BASE_URL)%'
+            $schemaName: '%env(MENU_SCHEMA_NAME)%'
+
+    App\Menu\MenuExtractorInterface: '@App\Menu\ChatCompletionsMenuExtractor'
 
     App\Retell\RetellWebhookVerifier:
         arguments:

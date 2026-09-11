@@ -16,7 +16,7 @@ php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migratio
 php bin/console cache:clear --no-warmup
 php bin/console cache:warmup
 
-mkdir -p var/uploads
+mkdir -p var/uploads var/pdf-paginas
 chown -R www-data:www-data var
 
 exec "$@"
