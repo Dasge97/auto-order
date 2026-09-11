@@ -10,6 +10,13 @@
         </div>
     </div>
 
+    {% if direccion_no_publica %}
+        <div class="flash flash-warning">
+            Las direcciones de abajo no empiezan por https, así que Retell no podrá llamarlas desde Internet.
+            Abre esta página por el dominio público, o pon APP_PUBLIC_URL en la configuración del servidor.
+        </div>
+    {% endif %}
+
     {% if contrasena_por_defecto %}
         <div class="flash flash-error">
             El panel sigue con la contraseña de ejemplo. Cambia ADMIN_PASSWORD_HASH antes de dejarlo accesible desde Internet.

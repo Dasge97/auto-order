@@ -5,8 +5,11 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
-    #esi: true
-    #fragments: true
+    # Traefik termina el HTTPS y pasa la petición al contenedor por HTTP. Sin esto,
+    # la aplicación cree que la visita llega por HTTP a una dirección interna, y las
+    # direcciones que enseña no sirven para pegarlas en Retell.
+    trusted_proxies: '%env(TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
 
 when@test:
     framework:

@@ -26,6 +26,8 @@ class RetellSetupController extends AbstractController
         private readonly string $webhookSecret,
         #[Autowire('%env(ADMIN_PASSWORD_HASH)%')]
         private readonly string $adminPasswordHash,
+        #[Autowire('%env(APP_PUBLIC_URL)%')]
+        private readonly string $publicUrl,
     ) {
     }
 
@@ -38,7 +40,13 @@ class RetellSetupController extends AbstractController
     #[Route('/retell', name: 'app_retell_setup', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $baseUrl = rtrim($request->getSchemeAndHttpHost(), '/');
+        // Las direcciones que se pegan en Retell tienen que ser las públicas. Si se
+        // configura APP_PUBLIC_URL se usa esa, porque es la única fuente segura cuando
+        // hay un proxy delante.
+        $baseUrl = '' !== $this->publicUrl
+            ? rtrim($this->publicUrl, '/')
+            : rtrim($request->getSchemeAndHttpHost(), '/');
+
         $business = $this->businesses->findActiveForDemo();
 
         $prompt = str_replace('{{nombre_negocio}}', $business?->getName() ?? 'el negocio', AgentPrompt::PROMPT);
@@ -51,6 +59,7 @@ class RetellSetupController extends AbstractController
             'token_configurado' => '' !== $this->toolToken && 'cambia-esto-en-produccion' !== $this->toolToken,
             'secreto_configurado' => '' !== $this->webhookSecret,
             'contrasena_por_defecto' => self::DEFAULT_PASSWORD_HASH === $this->adminPasswordHash,
+            'direccion_no_publica' => !str_starts_with($baseUrl, 'https://'),
         ]);
     }
 }
