@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Pedido {{ order.reference }} · Auto-order{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Pedido {{ order.reference }}</h1>
+            <p class="subtitle">
+                {{ order.business.name }} · {{ order.createdAt|date('d/m/Y H:i') }}
+                {% if order.call.simulated %}<span class="tag tag-sim">llamada simulada</span>{% endif %}
+            </p>
+        </div>
+        <div class="spacer"></div>
+        <a class="btn btn-secondary" href="{{ path('app_orders') }}">Volver</a>
+        <a class="btn" href="{{ path('app_order_ticket', {id: order.id}) }}" target="_blank">Abrir ticket</a>
+    </div>
+
+    <div class="grid-2">
+        <div class="card card-tight">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:50px" class="num">Cant.</th>
+                            <th>Producto</th>
+                            <th class="num" style="width:100px">Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                            <tr>
+                                <td class="num">{{ item.quantity }}</td>
+                                <td>
+                                    {{ item.nameCopy }}
+                                    {% if item.modifications %}
+                                        <div class="small muted">Petición: {{ item.modifications }} <span class="tag tag-warn">sin garantizar</span></div>
+                                    {% endif %}
+                                </td>
+                                <td class="num">{{ item.lineTotalAsFloat is null ? '—' : item.lineTotalAsFloat|eur }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" class="num"><strong>Total</strong></td>
+                            <td class="num">
+                                {% if order.total %}
+                                    <strong>{{ order.total|eur }}</strong>
+                                {% else %}
+                                    <span class="muted small">Sin total: falta el precio de algún producto</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0">Datos</h2>
+            <p><strong>Cliente:</strong> {{ order.customerName ?: 'no indicado' }}</p>
+            <p><strong>Modalidad:</strong> {{ order.fulfillment ?: 'no indicada' }}</p>
+            <p><strong>Teléfono:</strong> {{ order.call.fromNumber ?: 'no indicado' }}</p>
+
+            {% if order.notes %}
+                <p><strong>Observaciones:</strong><br>{{ order.notes }}</p>
+            {% endif %}
+
+            <p class="small muted" style="margin-bottom:0">
+                Llamada {{ order.call.providerCallId }}.
+                <a href="{{ path('app_call_show', {id: order.call.id}) }}">Ver la llamada</a>
+            </p>
+        </div>
+    </div>
+
+    <p class="muted small">Pedido de demostración. No se ha enviado a ninguna cocina ni a ningún sistema del negocio.</p>
+{% endblock %}

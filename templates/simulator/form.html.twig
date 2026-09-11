@@ -1,0 +1,104 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Simular llamada · Auto-order{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Simular llamada</h1>
+            <p class="subtitle">Escribe un pedido y se guarda como si lo hubiera tomado el agente por teléfono.</p>
+        </div>
+    </div>
+
+    {% if not business %}
+        <div class="card">
+            <p>No hay ningún negocio marcado para atender las llamadas.</p>
+            <a class="btn" href="{{ path('app_businesses') }}">Ir a negocios</a>
+        </div>
+    {% elseif not business.publishedMenu %}
+        <div class="card">
+            <p>"{{ business.name }}" todavía no tiene carta publicada.</p>
+            <a class="btn" href="{{ path('app_business_show', {id: business.id}) }}">Cargar su carta</a>
+        </div>
+    {% else %}
+        <form method="post" action="{{ path('app_simulator_submit') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('simulator') }}">
+
+            <div class="card">
+                <p class="muted small" style="margin-top:0">Negocio: <strong>{{ business.name }}</strong> · {{ business.publishedMenu.countItems }} productos en la carta</p>
+
+                <table id="lines">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th style="width:90px">Cantidad</th>
+                            <th style="width:220px">Modificación</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <div style="margin-top:12px">
+                    <button class="btn btn-secondary btn-small" type="button" id="add-line">Añadir producto</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="field-row">
+                    <div>
+                        <label for="customer_name">Nombre del cliente</label>
+                        <input type="text" id="customer_name" name="customer_name" placeholder="opcional">
+                    </div>
+                    <div>
+                        <label for="fulfillment">Modalidad</label>
+                        <select id="fulfillment" name="fulfillment">
+                            <option value="">no indicada</option>
+                            <option value="recoger">recoger</option>
+                            <option value="domicilio">domicilio</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="notes">Observaciones</label>
+                    <input type="text" id="notes" name="notes" placeholder="opcional">
+                </div>
+
+                <button class="btn" type="submit">Guardar pedido</button>
+            </div>
+        </form>
+
+        <script type="application/json" id="menu-data">
+            {{ business.publishedMenu.items|map(i => {id: i.id, nombre: i.name})|json_encode|raw }}
+        </script>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {% if business and business.publishedMenu %}
+        <script>
+            // Cada fila es un producto de la carta publicada, elegido de una lista, para
+            // que el simulador no pueda meter nada que el agente no podría pedir.
+            const productos = JSON.parse(document.getElementById('menu-data').textContent);
+            let linea = 0;
+
+            function addLine() {
+                const key = linea++;
+                const tbody = document.querySelector('#lines tbody');
+                const tr = document.createElement('tr');
+
+                const opciones = productos.map(p => '<option value="' + p.id + '">' + p.nombre.replace(/</g, '&lt;') + '</option>').join('');
+
+                tr.innerHTML =
+                    '<td><select name="items[' + key + '][item_id]">' + opciones + '</select></td>' +
+                    '<td><input type="number" name="items[' + key + '][quantity]" value="1" min="1" max="99"></td>' +
+                    '<td><input type="text" name="items[' + key + '][modifications]" placeholder="sin cebolla"></td>';
+
+                tbody.appendChild(tr);
+            }
+
+            document.getElementById('add-line').addEventListener('click', addLine);
+            addLine();
+        </script>
+    {% endif %}
+{% endblock %}

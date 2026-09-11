@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Revisar carta · {{ business.name }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Carta de {{ business.name }}</h1>
+            <p class="subtitle">
+                {% if version.published %}
+                    Publicada el {{ version.publishedAt|date('d/m/Y H:i') }}. Si la cambias, vuelve a publicarla.
+                {% else %}
+                    Borrador. Corrige lo que haga falta y publícala para que el agente la use.
+                {% endif %}
+            </p>
+        </div>
+        <div class="spacer"></div>
+        <a class="btn btn-secondary" href="{{ path('app_business_show', {id: business.id}) }}">Volver</a>
+    </div>
+
+    {% set dudosos = version.items|filter(i => i.needsReview)|length %}
+    {% if dudosos > 0 %}
+        <div class="flash flash-warning">{{ dudosos }} producto(s) se han leído con dudas. Están marcados en la tabla.</div>
+    {% endif %}
+
+    <form method="post" action="{{ path('app_menu_save', {id: version.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('menu_save' ~ version.id) }}">
+
+        <div class="card card-tight">
+            <div class="table-wrap">
+                <table id="items-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:180px">Producto</th>
+                            <th style="min-width:120px">Categoría</th>
+                            <th style="min-width:200px">Descripción</th>
+                            <th style="min-width:110px">Opciones</th>
+                            <th style="width:90px">Precio €</th>
+                            <th style="width:110px">Precio texto</th>
+                            <th style="width:90px">Origen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in version.items %}
+                            <tr {% if item.needsReview %}class="unseen"{% endif %}>
+                                <td><input type="text" name="items[{{ item.id }}][name]" value="{{ item.name }}"></td>
+                                <td><input type="text" name="items[{{ item.id }}][category]" value="{{ item.category }}"></td>
+                                <td><input type="text" name="items[{{ item.id }}][description]" value="{{ item.description }}"></td>
+                                <td><input type="text" name="items[{{ item.id }}][options]" value="{{ item.options|join('; ') }}" placeholder="grande; pequeño"></td>
+                                <td><input type="text" name="items[{{ item.id }}][price]" value="{{ item.price ? item.price|replace({'.': ','}) : '' }}" placeholder="—"></td>
+                                <td><input type="text" name="items[{{ item.id }}][price_text]" value="{{ item.priceText }}" placeholder="desde 8 €"></td>
+                                <td class="small muted">{{ item.sourceRef ?: '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="padding:14px 18px; border-top:1px solid var(--line)">
+                <button class="btn btn-secondary btn-small" type="button" id="add-row">Añadir producto</button>
+                <span class="muted small">Para borrar un producto, deja su nombre vacío y guarda.</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <button class="btn" type="submit" name="publish" value="1">Publicar menú</button>
+            <button class="btn btn-secondary" type="submit">Guardar sin publicar</button>
+            <p class="muted small" style="margin-bottom:0">
+                Un producto sin precio se publica igual. El agente lo pedirá sin decir importe.
+            </p>
+        </div>
+    </form>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        // Añade filas vacías para productos que falten en la lectura.
+        let nuevos = 0;
+        document.getElementById('add-row').addEventListener('click', function () {
+            const key = 'nuevo' + (++nuevos);
+            const tbody = document.querySelector('#items-table tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = [
+                'name', 'category', 'description', 'options', 'price', 'price_text'
+            ].map(function (field) {
+                return '<td><input type="text" name="items[' + key + '][' + field + ']"></td>';
+            }).join('') + '<td class="small muted">manual</td>';
+            tbody.appendChild(tr);
+            tr.querySelector('input').focus();
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Pedidos · Auto-order{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Pedidos</h1>
+            <p class="subtitle">Se actualiza solo. Los pedidos nuevos aparecen arriba.</p>
+        </div>
+    </div>
+
+    <div class="card card-tight">
+        {% if orders is empty %}
+            <p class="empty" id="empty-row">Todavía no ha entrado ningún pedido.</p>
+        {% endif %}
+
+        <div class="table-wrap">
+            <table id="orders-table" {% if orders is empty %}style="display:none"{% endif %}>
+                <thead>
+                    <tr>
+                        <th style="width:90px">Ref.</th>
+                        <th>Negocio</th>
+                        <th>Cliente</th>
+                        <th>Productos</th>
+                        <th style="width:90px">Modalidad</th>
+                        <th class="num" style="width:90px">Total</th>
+                        <th style="width:80px">Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr class="{{ order.seen ? '' : 'unseen' }}">
+                            <td>
+                                <a href="{{ path('app_order_show', {id: order.id}) }}"><strong>{{ order.reference }}</strong></a>
+                                {% if order.call.simulated %}<span class="tag tag-sim">simulado</span>{% endif %}
+                            </td>
+                            <td>{{ order.business.name }}</td>
+                            <td>{{ order.customerName ?: '—' }}</td>
+                            <td class="small">
+                                {% for item in order.items %}
+                                    {{ item.quantity }}× {{ item.nameCopy }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="small">{{ order.fulfillment ?: '—' }}</td>
+                            <td class="num">{{ order.total|eur }}</td>
+                            <td class="small">{{ order.createdAt|date('H:i') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="stale-warning">El panel ha dejado de actualizarse. Recarga la página.</div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        // Pregunta cada dos segundos si hay pedidos nuevos y recarga cuando los hay.
+        (function () {
+            const url = {{ path('app_orders_new')|json_encode|raw }};
+            let lastId = {{ orders is empty ? 0 : orders|first.id }};
+            let failures = 0;
+
+            async function check() {
+                try {
+                    const response = await fetch(url + '?desde=' + lastId, {headers: {'Accept': 'application/json'}});
+                    if (!response.ok) throw new Error('respuesta ' + response.status);
+                    const data = await response.json();
+                    failures = 0;
+                    document.getElementById('stale-warning').style.display = 'none';
+                    if (data.pedidos.length > 0) {
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    // Tres fallos seguidos significan que el panel ya no está al día.
+                    if (++failures >= 3) {
+                        document.getElementById('stale-warning').style.display = 'block';
+                    }
+                }
+            }
+
+            setInterval(check, 2000);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) check();
+            });
+        })();
+    </script>
+{% endblock %}

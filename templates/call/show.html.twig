@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Llamada · Auto-order{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Llamada del {{ call.startedAt|date('d/m/Y H:i') }}</h1>
+            <p class="subtitle">
+                {{ call.business.name }} · {{ call.providerCallId }}
+                {% if call.simulated %}<span class="tag tag-sim">simulada</span>{% endif %}
+            </p>
+        </div>
+        <div class="spacer"></div>
+        <a class="btn btn-secondary" href="{{ path('app_calls') }}">Volver</a>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <h2 style="margin-top:0">Datos</h2>
+            <p><strong>Estado:</strong> {{ call.status }}</p>
+            <p><strong>Desde:</strong> {{ call.fromNumber ?: 'no indicado' }}</p>
+            <p><strong>Hacia:</strong> {{ call.toNumber ?: 'no indicado' }}</p>
+            <p><strong>Duración:</strong> {{ call.durationSeconds ? call.durationSeconds ~ ' s' : 'no indicada' }}</p>
+            <p style="margin-bottom:0">
+                <strong>Carta usada:</strong>
+                {% if call.menuVersion %}
+                    <a href="{{ path('app_menu_review', {id: call.menuVersion.id}) }}">{{ call.menuVersion.countItems }} productos</a>
+                {% else %}
+                    ninguna
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0">Pedido</h2>
+            {% if order %}
+                <p><a href="{{ path('app_order_show', {id: order.id}) }}"><strong>{{ order.reference }}</strong></a></p>
+                <p class="small">{{ order.items|length }} producto(s) · {{ order.total|eur }}</p>
+            {% else %}
+                <p class="muted">Esta llamada no llegó a generar pedido.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if call.transcript %}
+        <div class="card">
+            <h2 style="margin-top:0">Transcripción</h2>
+            <pre class="small" style="white-space:pre-wrap; margin:0">{{ call.transcript }}</pre>
+        </div>
+    {% endif %}
+{% endblock %}

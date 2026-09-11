@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Negocios · Auto-order{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Negocios</h1>
+            <p class="subtitle">Cada negocio tiene su carta. El marcado como activo es el que atiende las llamadas.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <form method="post" action="{{ path('app_business_new') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('business_new') }}">
+            <div class="field-row">
+                <div>
+                    <label for="new-name">Nombre del negocio</label>
+                    <input type="text" id="new-name" name="name" placeholder="Kebab Estambul" required>
+                </div>
+                <div style="flex:0 0 auto; align-self:flex-end;">
+                    <button class="btn" type="submit">Crear negocio</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card card-tight">
+        {% if businesses is empty %}
+            <p class="empty">Todavía no hay ningún negocio.</p>
+        {% else %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Negocio</th>
+                            <th>Carta publicada</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for business in businesses %}
+                            <tr>
+                                <td><a href="{{ path('app_business_show', {id: business.id}) }}">{{ business.name }}</a></td>
+                                <td>
+                                    {% if business.publishedMenu %}
+                                        {{ business.publishedMenu.countItems }} productos
+                                        <span class="muted small">· {{ business.publishedMenu.publishedAt|date('d/m/Y H:i') }}</span>
+                                    {% else %}
+                                        <span class="tag tag-warn">Sin carta</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if business.activeForDemo %}
+                                        <span class="tag tag-ok">Atiende las llamadas</span>
+                                    {% endif %}
+                                </td>
+                                <td class="num">
+                                    {% if not business.activeForDemo %}
+                                        <form method="post" action="{{ path('app_business_activate', {id: business.id}) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('business_activate' ~ business.id) }}">
+                                            <button class="btn btn-secondary btn-small" type="submit">Usar para la demo</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

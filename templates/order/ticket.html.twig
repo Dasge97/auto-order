@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ticket {{ order.reference }}{% endblock %}
+
+{% block layout %}
+    <div class="content">
+        <div class="no-print" style="margin-bottom:16px">
+            <a class="btn btn-secondary" href="{{ path('app_order_show', {id: order.id}) }}">Volver</a>
+            <button class="btn" onclick="window.print()">Imprimir</button>
+        </div>
+
+        <div class="ticket">
+            <h2>{{ order.business.name }}</h2>
+            <div style="text-align:center">Pedido {{ order.reference }}</div>
+            <div style="text-align:center">{{ order.createdAt|date('d/m/Y H:i') }}</div>
+
+            <hr>
+
+            <div class="line"><span>Cliente</span><span>{{ order.customerName ?: 'no indicado' }}</span></div>
+            <div class="line"><span>Modalidad</span><span>{{ order.fulfillment ?: 'no indicada' }}</span></div>
+            {% if order.call.fromNumber %}
+                <div class="line"><span>Teléfono</span><span>{{ order.call.fromNumber }}</span></div>
+            {% endif %}
+
+            <hr>
+
+            {% for item in order.items %}
+                <div class="line">
+                    <span>{{ item.quantity }}× {{ item.nameCopy }}</span>
+                    <span>{{ item.lineTotalAsFloat is null ? '' : item.lineTotalAsFloat|eur }}</span>
+                </div>
+                {% if item.modifications %}
+                    <div class="mod">· {{ item.modifications }}</div>
+                {% endif %}
+            {% endfor %}
+
+            <hr>
+
+            {% if order.total %}
+                <div class="line"><strong>TOTAL</strong><strong>{{ order.total|eur }}</strong></div>
+            {% else %}
+                <div class="line"><span>Total</span><span>no indicado</span></div>
+            {% endif %}
+
+            {% if order.notes %}
+                <hr>
+                <div><strong>Observaciones</strong></div>
+                <div>{{ order.notes }}</div>
+                <div style="margin-top:6px">Peticiones apuntadas, pendientes de confirmar con el negocio.</div>
+            {% endif %}
+
+            <div class="demo-mark">** DEMOSTRACION **</div>
+        </div>
+    </div>
+{% endblock %}

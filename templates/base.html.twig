@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Auto-order{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>&#9742;</text></svg>">
+        <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+        {% block stylesheets %}{% endblock %}
+    </head>
+    <body>
+        {% block layout %}
+            <header class="topbar">
+                <a class="brand" href="{{ path('app_orders') }}">Auto-order</a>
+                <nav>
+                    <a href="{{ path('app_orders') }}" class="{{ app.request.attributes.get('_route') starts with 'app_order' ? 'current' : '' }}">Pedidos</a>
+                    <a href="{{ path('app_businesses') }}" class="{{ app.request.attributes.get('_route') starts with 'app_business' ? 'current' : '' }}">Negocios</a>
+                    <a href="{{ path('app_calls') }}" class="{{ app.request.attributes.get('_route') starts with 'app_call' ? 'current' : '' }}">Llamadas</a>
+                    <a href="{{ path('app_simulator') }}" class="{{ app.request.attributes.get('_route') starts with 'app_simulator' ? 'current' : '' }}">Simular llamada</a>
+                </nav>
+                <div class="topbar-right">
+                    {% set active_business = active_business() %}
+                    {% if active_business %}
+                        <span class="active-badge" title="Negocio que atiende las llamadas entrantes">Atiende: {{ active_business.name }}</span>
+                    {% else %}
+                        <span class="active-badge warn">Ningún negocio activo</span>
+                    {% endif %}
+                    <a class="logout" href="{{ path('app_logout') }}">Salir</a>
+                </div>
+            </header>
+
+            <main class="content">
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="flash flash-{{ label }}">{{ message }}</div>
+                    {% endfor %}
+                {% endfor %}
+
+                {% block body %}{% endblock %}
+            </main>
+        {% endblock %}
+        {% block javascripts %}{% endblock %}
+    </body>
+</html>

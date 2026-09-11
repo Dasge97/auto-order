@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+parameters:
+    app.upload_dir: '%kernel.project_dir%/var/uploads'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+
+    App\Storage\ImportFileStorage:
+        arguments:
+            $uploadDir: '%app.upload_dir%'
+
+    App\Menu\OpenAiMenuExtractor:
+        arguments:
+            $apiKey: '%env(OPENAI_API_KEY)%'
+            $model: '%env(OPENAI_MODEL)%'
+
+    App\Menu\MenuExtractorInterface: '@App\Menu\OpenAiMenuExtractor'
+
+    App\Retell\RetellWebhookVerifier:
+        arguments:
+            $webhookSecret: '%env(RETELL_WEBHOOK_SECRET)%'
+
+    App\Retell\ToolAuthenticator:
+        arguments:
+            $toolToken: '%env(RETELL_TOOL_TOKEN)%'

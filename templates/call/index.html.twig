@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Llamadas · Auto-order{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Llamadas</h1>
+            <p class="subtitle">Para saber qué ha pasado cuando algo no salga como esperabas.</p>
+        </div>
+    </div>
+
+    <div class="card card-tight">
+        {% if calls is empty %}
+            <p class="empty">Todavía no ha entrado ninguna llamada.</p>
+        {% else %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Inicio</th>
+                            <th>Negocio</th>
+                            <th>Teléfono</th>
+                            <th>Estado</th>
+                            <th>Pedido</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for call in calls %}
+                            <tr>
+                                <td class="small">
+                                    <a href="{{ path('app_call_show', {id: call.id}) }}">{{ call.startedAt|date('d/m/Y H:i') }}</a>
+                                    {% if call.simulated %}<span class="tag tag-sim">simulada</span>{% endif %}
+                                </td>
+                                <td>{{ call.business.name }}</td>
+                                <td class="small">{{ call.fromNumber ?: '—' }}</td>
+                                <td><span class="tag">{{ call.status }}</span></td>
+                                <td>
+                                    {% set order = orders_by_call[call.id] %}
+                                    {% if order %}
+                                        <a href="{{ path('app_order_show', {id: order.id}) }}">{{ order.reference }}</a>
+                                    {% else %}
+                                        <span class="muted small">sin pedido</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

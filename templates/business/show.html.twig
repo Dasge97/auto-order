@@ -1,0 +1,126 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ business.name }} · Auto-order{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ business.name }}</h1>
+            <p class="subtitle">
+                {% if business.publishedMenu %}
+                    Carta publicada con {{ business.publishedMenu.countItems }} productos.
+                    <a href="{{ path('app_menu_review', {id: business.publishedMenu.id}) }}">Ver o corregir</a>
+                {% else %}
+                    Todavía no hay carta publicada, así que el agente no puede tomar pedidos.
+                {% endif %}
+            </p>
+        </div>
+        <div class="spacer"></div>
+        <div>
+            {% if business.activeForDemo %}
+                <span class="tag tag-ok">Atiende las llamadas</span>
+            {% else %}
+                <form method="post" action="{{ path('app_business_activate', {id: business.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('business_activate' ~ business.id) }}">
+                    <button class="btn btn-secondary" type="submit">Usar para la demo</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-top:0">Cargar la carta</h2>
+        <p class="muted small">Sube el PDF de la carta, fotos del cartel, o pega el texto. Después podrás corregir lo que salga mal.</p>
+
+        <form method="post" action="{{ path('app_business_import', {id: business.id}) }}" enctype="multipart/form-data">
+            <input type="hidden" name="_token" value="{{ csrf_token('menu_import' ~ business.id) }}">
+
+            <div class="field">
+                <label for="files">PDF o imágenes</label>
+                <input type="file" id="files" name="files[]" multiple accept="application/pdf,image/*">
+            </div>
+
+            <div class="field">
+                <label for="text">O pega aquí el texto de la carta</label>
+                <textarea id="text" name="text" placeholder="Durum de pollo 7,50&#10;Kebab mixto 7,00&#10;..."></textarea>
+            </div>
+
+            <button class="btn" type="submit">Leer la carta</button>
+        </form>
+    </div>
+
+    <div class="card card-tight">
+        <div style="padding:14px 18px 0"><h2 style="margin:0">Cargas anteriores</h2></div>
+
+        {% if imports is empty %}
+            <p class="empty">Todavía no has cargado ninguna carta.</p>
+        {% else %}
+            <div class="table-wrap">
+                <table id="imports-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Origen</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for import in imports %}
+                            <tr data-import="{{ import.id }}">
+                                <td class="small">{{ import.createdAt|date('d/m/Y H:i') }}</td>
+                                <td class="small">{{ import.describeSource }}</td>
+                                <td class="import-status">
+                                    {% if import.status == 'listo' %}
+                                        <span class="tag tag-ok">Lista para revisar</span>
+                                        <span class="muted small">{{ import.menuVersion ? import.menuVersion.countItems : 0 }} productos</span>
+                                    {% elseif import.status == 'error' %}
+                                        <span class="tag tag-bad">Error</span>
+                                        <div class="small muted">{{ import.error }}</div>
+                                    {% elseif import.status == 'procesando' %}
+                                        <span class="tag">Leyendo…</span>
+                                    {% else %}
+                                        <span class="tag">En cola</span>
+                                    {% endif %}
+                                </td>
+                                <td class="num import-action">
+                                    {% if import.menuVersion %}
+                                        <a class="btn btn-secondary btn-small" href="{{ path('app_menu_review', {id: import.menuVersion.id}) }}">Revisar y publicar</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        // Mientras haya una carta leyéndose, se recarga la página al terminar.
+        (function () {
+            const url = {{ path('app_business_import_status', {id: business.id})|json_encode|raw }};
+            const pending = document.querySelectorAll('#imports-table tbody tr .tag');
+            let watching = Array.from(pending).some(t => t.textContent.trim() === 'Leyendo…' || t.textContent.trim() === 'En cola');
+
+            if (!watching) return;
+
+            const timer = setInterval(async () => {
+                try {
+                    const response = await fetch(url, {headers: {'Accept': 'application/json'}});
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    const stillWorking = data.importaciones.some(i => i.estado === 'pendiente' || i.estado === 'procesando');
+                    if (!stillWorking) {
+                        clearInterval(timer);
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    // Si falla una consulta se reintenta en el siguiente ciclo.
+                }
+            }, 2000);
+        })();
+    </script>
+{% endblock %}
