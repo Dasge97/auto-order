@@ -1,31 +1,35 @@
 # Auto-order
 
-Demo de atención telefónica con IA para captar clientes: el agente lee **la carta del propio negocio**, toma el pedido y lo muestra en un panel.
+Demo de atención telefónica con IA para captar clientes. El agente coge el teléfono, toma un pedido con productos de la carta del propio negocio y lo deja apuntado en un panel.
 
 ## Flujo
 
-Cargar URL, PDF o imágenes → extraer menú con IA → revisar y publicar → recibir llamada con Retell → confirmar pedido → mostrarlo en el panel.
+Subir la carta en PDF, en imágenes o pegando el texto → extraerla con IA → corregirla y publicarla → recibir la llamada con Retell → confirmar el pedido → verlo en el panel.
 
-No es exclusivamente para kebabs. La misma base sirve para negocios con cartas o listas de productos distintas.
+No es solo para kebabs. Sirve para cualquier negocio con una carta o una lista de productos.
 
 ## Lo esencial
 
-- La carta del cliente es el punto de partida; no hay que montar un catálogo manual desde cero.
-- Precios, tiempos, horarios y reparto son información opcional.
-- Si falta un dato, el agente no lo inventa ni bloquea el pedido por ello.
-- Productos identificados, cantidades y observaciones bastan para registrar la demo.
-- Confirmación explícita y persistencia sin pedidos perdidos o duplicados.
-- Panel y ticket HTML; impresión física opcional.
-- Sin cotizaciones, mínimos de compra, gestión de cocina ni integraciones con TPV.
+- La carta del cliente es el punto de partida, no hay que montar un catálogo a mano.
+- Para la demo basta con que los productos se parezcan a los suyos.
+- Si falta un dato, el agente no se lo inventa ni bloquea el pedido.
+- Confirmación explícita, y ni un pedido perdido ni duplicado.
+- Hay total cuando todos los productos del pedido tienen precio; si no, no hay total.
+- Ticket en pantalla, imprimible desde el navegador.
+- Sin TPV, sin cocina, sin reparto y sin horarios.
 
 ## Documentación
 
-La [especificación vigente del MVP](docs/auto-order-mvp.md) define importación de carta, conversación, datos mínimos, herramientas, pruebas y fases de implementación. Sustituye el alcance anterior.
+La [especificación del MVP](docs/auto-order-mvp.md) recoge el alcance, las decisiones y el orden de trabajo.
 
-## Estado y base técnica
+## Estado
 
-Solo documentación; aplicación todavía no implementada.
+Solo documentación. La aplicación todavía no está implementada.
 
-Symfony, Doctrine, PostgreSQL, Twig y Retell AI. Proyecto independiente de autocaller, sin Odoo ni integración directa con Twilio. Modelo/proveedor de extracción a elegir al implementar.
+## Base técnica
 
-La telefonía habitual, impresora y sistema de cada cliente se estudiarán al preparar su instalación, después de la demostración comercial. No son requisitos de este MVP.
+Symfony, Doctrine, PostgreSQL y Twig. Extracción de la carta con OpenAI con visión. Voz con Retell AI. Se despliega en auto-order.code-hive.space.
+
+Proyecto independiente de autocaller. Sin Odoo y sin integración directa con Twilio.
+
+La telefonía habitual del cliente, su impresora y su sistema se estudian al preparar su instalación, después de la demostración. No son parte de este MVP.

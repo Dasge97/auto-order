@@ -1,287 +1,256 @@
 # Auto-order — MVP de demostración comercial
 
-Versión: 0.2 · 11 de septiembre de 2026
+Versión: 0.3 · 11 de septiembre de 2026
 
-Esta especificación sustituye íntegramente el alcance anterior. El repositorio existe; la aplicación todavía no está implementada.
+Esta versión recoge las decisiones tomadas el 11 de septiembre de 2026 y sustituye a la anterior. El repositorio existe; la aplicación todavía no está implementada.
 
-## 1. Objetivo
+## 1. Para qué sirve
 
-Enseñar a un posible cliente cómo un agente telefónico toma pedidos utilizando **la carta de su propio negocio** y los hace aparecer en nuestro panel.
+Para enseñar a un posible cliente que un agente telefónico coge el teléfono, toma un pedido con productos de su carta y lo deja apuntado en un panel.
 
-El circuito es: cargar carta → extraer menú con IA → revisar → activar demo → llamar → confirmar pedido → verlo en el panel.
+No es un sistema de gestión de restaurante. No conecta con su TPV ni con su cocina. Todo eso se le cuenta como lo que vendría después, si contrata.
 
-No construimos todavía un sistema de gestión del restaurante. Precios, tiempos, horarios, reparto y demás operativa no son requisitos para tomar un pedido de demostración. La instalación comercial se adaptará después a lo que tenga cada cliente.
+La carta no tiene que estar importada a la perfección. Basta con que los productos que el cliente oiga por teléfono se parezcan a los suyos.
 
-Auto-order es independiente de autocaller. Reutiliza su experiencia técnica, no su dominio de leads, Odoo o llamadas salientes. La integración de voz es Retell AI, sin integración directa con Twilio.
+## 2. Qué incluye
 
-El producto no está limitado a kebabs: carta, lista de productos o catálogo de un negocio alimentan el mismo flujo. Los nombres de platos y sectores son datos, no código.
+- Crear un negocio y cargar su carta subiendo un PDF, subiendo imágenes o pegando el texto.
+- Leer la carta con un modelo de OpenAI con visión y sacar una lista de productos.
+- Una tabla editable para corregir los productos a mano y publicar el menú.
+- Marcar un negocio como activo: las llamadas que entren usan su carta.
+- Agente de Retell que toma un pedido, pregunta nombre y si recoge o se lo llevan, y pide confirmación.
+- Un pedido por llamada, guardado y visible en el panel sin recargar.
+- Lista simple de llamadas, para saber qué ha pasado cuando algo falle.
+- Ticket en pantalla, imprimible desde el navegador.
+- Botón para simular una llamada escribiendo el pedido, sin telefonear.
+- Login con usuario y contraseña fijos.
 
-## 2. Alcance mínimo
+## 3. Qué no incluye
 
-Incluido:
+- Importar la carta desde una URL.
+- Impresora de tickets conectada al servidor.
+- Horarios, tiempos de preparación, zonas de reparto, mínimos de compra y pagos.
+- Gestión de cocina, estados de preparación y repartidores.
+- TPV, ERP, Odoo, facturación, SMS y WhatsApp.
+- Portal para el cliente final, altas de usuarios y aplicación móvil.
+- Idiomas distintos del castellano.
 
-- Crear un negocio de demostración y cargar su carta mediante URL pública, PDF o imágenes.
-- Usar un modelo para leerla y generar un menú estructurado propio de ese negocio.
-- Mostrar la fuente y una vista previa editable para corregir errores y publicar el menú.
-- Agente Retell que consulta ese menú, recoge artículos, cantidades y observaciones, y pide confirmación.
-- Guardar un único pedido por llamada y mostrarlo automáticamente en un panel.
-- Historial básico de llamadas y pedidos.
-- Ticket HTML con vista previa; impresión física opcional para un equipo de demo.
-- Login de administrador y aislamiento entre negocios.
-- Pruebas de importación, conversación y persistencia.
+Nada de la lista puede colarse por la puerta de atrás en formularios, base de datos o herramientas del agente.
 
-Fuera de alcance:
+## 4. Cargar la carta
 
-- Motor de cotizaciones, reservas de stock, caducidad de presupuestos y validación comercial de precios.
-- Configuración obligatoria de horarios, preparación, reparto, mínimos, pagos o disponibilidad.
-- Flujos de aceptación automática/manual por restaurante y gestión de cocina o repartidores.
-- TPV, ERP, Odoo, cobros, facturación, SMS/WhatsApp, portabilidad y transferencias.
-- Portal de clientes, suscripciones, autorregistro, roles complejos o aplicaciones móviles nativas.
-- Compatibilidad universal de impresoras o instalación automática por operadora.
-- Rastreo periódico de cartas y sincronización automática de cambios.
+1. Creas el negocio con su nombre.
+2. Subes un PDF, subes una o varias imágenes, o pegas el texto de la carta.
+3. El modelo de OpenAI lee lo que has subido y devuelve una lista de productos.
+4. Ves la lista en una tabla editable, junto al archivo original.
+5. Corriges lo que quieras y pulsas "Publicar menú".
+6. Las llamadas nuevas usan ese menú.
 
-No convertir estos elementos en requisitos indirectos mediante formularios, base de datos, herramientas del agente o tests.
+La carta se carga antes de la demo, nunca durante la llamada.
 
-## 3. Importación de la carta
+De cada producto se guarda el nombre, y además la categoría, la descripción y el precio si aparecen. El nombre es lo único obligatorio. Un producto sin precio se publica igual.
 
-### Flujo
+Un precio del tipo "desde 8 €" se guarda como texto, no como número. Un precio ilegible se deja vacío. El modelo no debe inventar productos, ingredientes ni precios que no estén en la carta.
 
-1. El administrador crea el negocio con su nombre.
-2. Añade un enlace público o sube un PDF/una o varias imágenes.
-3. El servidor obtiene el contenido y el modelo extrae productos y datos legibles.
-4. Se muestra el resultado junto a la fuente, con avisos localizados de extracción dudosa.
-5. El administrador corrige lo necesario y pulsa “Publicar menú”.
-6. Las llamadas nuevas utilizan ese menú.
+Si no sale ningún producto legible, se muestra el fallo y puedes reintentar o pegar el texto a mano.
 
-La importación se realiza antes de presentar la demo. No se lee la web original durante cada llamada: un fallo de esa web no debe romper una conversación.
+Publicar una importación nueva cambia el menú activo. Una importación fallida no borra el menú anterior. Una llamada se queda con la versión del menú que había cuando empezó.
 
-Un enlace que requiera login, esté bloqueado o no pueda leerse ofrece como alternativa subir PDF o imágenes. No sortear restricciones ni desarrollar un navegador universal. Si no se extrae ningún producto legible, se explica el fallo y se permite reintentar; no publicar un menú inventado.
+## 5. Qué hace el agente cuando falta información
 
-### Información extraída
-
-- Nombre del producto.
-- Categoría y descripción si aparecen.
-- Tamaños, variantes u opciones si aparecen.
-- Precio literal y precio numérico/moneda solo cuando sean inequívocos.
-- Referencia a página, imagen o fragmento de origen para revisar dudas.
-
-Productos con nombre legible se pueden publicar sin precio, descripción ni opciones. No confundir “dato ausente” con “error que bloquea”.
-
-“Desde 8 €” se conserva como texto, no se convierte en precio fijo. Si una imagen tiene un precio ilegible, se guarda como desconocido y se permite continuar. No deducir menús, ingredientes, suplementos o tiempos que la fuente no explica.
-
-Las variantes pueden conservarse como opciones descriptivas o entradas separadas cuando facilite elegirlas. No crear un configurador obligatorio con reglas de mínimos/máximos por sector.
-
-### Versiones simples
-
-Cada importación genera un borrador. Publicar cambia el menú activo del negocio; una importación fallida no sustituye el anterior. Una llamada queda vinculada a la versión publicada con la que empezó. Los pedidos conservan una copia de los nombres y observaciones.
-
-Un cliente real puede aportar su carta para la presentación. Las cartas ficticias son exclusivamente fixtures de pruebas, no la demostración comercial principal. No publicar sus archivos o información personal en el repositorio.
-
-## 4. Información ausente: comportamiento obligatorio
-
-| Situación | Qué hace el agente |
+| Situación | Qué hace |
 | --- | --- |
-| Carta sin precios | Toma el pedido sin anunciar importe |
-| Solo algunos precios disponibles | Puede informar de los conocidos; no presenta una suma parcial como total |
-| Precio “desde” o ambiguo | Mantiene el matiz o indica que no tiene un precio cerrado |
-| Sin tiempo de preparación | No promete plazo; continúa con el pedido |
-| Sin información de reparto u horarios | Reconoce que no dispone de ella y registra lo solicitado sin garantizar el servicio |
-| Modificación no descrita | La recoge como petición/observación, sin garantizar que el negocio pueda cumplirla |
-| Producto ambiguo | Pregunta cuál de los productos se desea |
-| Producto que no aparece | No inventa una entrada; ofrece los disponibles o anota una consulta |
-| Pregunta sobre ingredientes/alérgenos desconocidos | No infiere seguridad ni composición; señala que debe consultarse con el negocio |
+| Carta sin precios | Toma el pedido sin decir importes |
+| Solo algunos productos con precio | Dice los que sabe; no da un total incompleto |
+| Precio "desde" o dudoso | No lo trata como precio cerrado |
+| No hay tiempo de preparación | No promete plazo |
+| No hay información de reparto | Apunta el pedido sin garantizar el servicio |
+| Piden una modificación que la carta no contempla | La apunta como observación, sin prometer que se pueda |
+| Nombre de producto ambiguo | Pregunta cuál de ellos quiere |
+| Producto que no está en la carta | No se lo inventa; ofrece los que hay |
+| Preguntan por ingredientes o alérgenos | Dice que hay que consultarlo con el negocio |
 
-Para mantener simple el MVP, **no hay cálculo obligatorio de total**. Se pueden leer los precios individuales inequívocos de la carta si se pregunta por ellos. Las modificaciones no heredan un precio inventado.
+## 6. Precios y total
 
-No exigir nombre, teléfono, dirección, modalidad, código postal o plazo para guardar un pedido de demo. Si se facilitan, se conservan como datos opcionales. El pedido contiene productos identificados, cantidades y observaciones; no es una promesa de entrega ni una aceptación operativa del restaurante.
+Si todos los productos del pedido tienen un precio numérico claro, se calcula el total. El agente puede decirlo y aparece en el ticket.
 
-## 5. Conversación
+Si a algún producto le falta el precio, no hay total. Ni el agente lo dice ni el ticket lo muestra. Nunca se muestra un total de cero ni una suma parcial presentada como total.
 
-1. Presentarse como asistente virtual del negocio.
-2. Escuchar qué desea pedir y consultar el menú publicado.
-3. Identificar artículos y cantidades; preguntar solo lo necesario para entender la petición.
-4. Recoger modificaciones y datos que el interlocutor aporte.
-5. Repetir el pedido completo en lenguaje natural, incluyendo las peticiones no garantizadas.
-6. Si cambia algo, corregirlo y repetir el resumen actualizado.
-7. Tras confirmación explícita, enviar el pedido al backend.
-8. Solo cuando se haya guardado, comunicar “He registrado tu pedido” y su referencia.
+Una modificación pedida por teléfono no cambia el precio.
 
-No anunciar “aceptado por cocina”, “en reparto”, “estará en 20 minutos” ni mensajes similares sin soporte. La confirmación aquí significa que el cliente confirma el contenido y el sistema lo registra.
+## 7. Cómo va la llamada
 
-Si el backend falla, no fingir éxito. Si la respuesta es incierta, consultar el pedido de esa llamada antes de reintentar. Colgar sin confirmar no crea un pedido. El análisis posterior de Retell nunca crea pedidos.
+1. Se presenta como asistente del negocio.
+2. Escucha el pedido y consulta el menú publicado.
+3. Identifica productos y cantidades.
+4. Apunta las modificaciones que le digan.
+5. Pregunta el nombre y si lo recoge o se lo llevan. Si no se lo dan, sigue adelante.
+6. Repite el pedido entero y espera confirmación.
+7. Si le corrigen algo, lo cambia y vuelve a repetir.
+8. Tras la confirmación, guarda el pedido.
+9. Solo cuando está guardado dice que lo ha registrado, con su referencia.
 
-MVP: un pedido por llamada. Antes de confirmarlo, el agente mantiene el borrador conversacional. Si se solicita un cambio después de registrarlo, señalar que ya fue registrado y dejar la revisión para el operador, sin crear un duplicado.
+No dice que la cocina lo ha aceptado, ni que llegará en veinte minutos, ni nada parecido.
 
-## 6. Panel y presentación
+Si el guardado falla, no finge que ha ido bien. Si no sabe si se guardó, consulta el pedido de esa llamada antes de reintentar.
 
-Tres áreas principales, sin administración operativa adicional:
+Colgar sin confirmar no crea pedido. El análisis que Retell envía al terminar la llamada nunca crea pedidos.
 
-- **Negocios y cartas:** crear negocio, subir/enlazar fuente, ver progreso, revisar extracción y publicar.
-- **Pedidos:** lista actualizada automáticamente, detalle, referencia, artículos, cantidades, observaciones y datos opcionales.
-- **Llamadas:** negocio, estado técnico y pedido relacionado si existe.
+Un pedido por llamada. Si piden un cambio después de registrarlo, dice que ya está registrado y que lo revisará una persona.
 
-La vista de pedido incluye ticket HTML y marca de demostración. Un indicador simple nuevo/visto es suficiente; no se necesita un tablero de preparación, aceptación o entrega.
+## 8. Panel
 
-Panel cómodo en portátil y tablet. Polling cada dos segundos, recuperación después de desconexión y aviso visible si deja de actualizarse. Sonido opcional tras interacción del usuario; la demostración no depende de él.
+Cuatro pantallas:
 
-Guion comercial:
+- **Negocios:** crear, subir carta, corregir la tabla de productos, publicar y marcar cuál está activo.
+- **Pedidos:** lista que se actualiza sola, con detalle, referencia, productos, cantidades, observaciones, nombre, si recoge o se lo llevan, y total si lo hay.
+- **Llamadas:** lista simple con negocio, estado y el pedido si lo hubo.
+- **Simular llamada:** escribes un pedido y se guarda como si viniera del agente.
 
-1. Preparar y revisar la carta del posible cliente.
-2. Abrir su negocio y el panel.
-3. Llamar al número de prueba y pedir productos reconocibles de su carta.
-4. Hacer una modificación y confirmar el resumen.
-5. Mostrar cómo aparece el pedido; abrir o imprimir el ticket.
-6. Explicar que su número habitual y sus sistemas se conectarán al preparar una instalación real.
+La lista de pedidos se refresca cada dos segundos. Si deja de refrescarse, se ve un aviso. Se ve bien en portátil y en tablet.
 
-No enviar esta demo a su TPV ni a su cocina real. La prueba telefónica real y el modo simulado deben distinguirse claramente.
+El pedido tiene un ticket en pantalla, marcado como demostración, que se imprime desde el navegador.
 
-## 7. Arquitectura sencilla
+Los pedidos hechos con el simulador se distinguen a simple vista de los que vienen de una llamada real.
 
-Symfony con controladores, entidades, repositorios y servicios convencionales; Doctrine, PostgreSQL, Twig y JavaScript ligero. Versiones y proveedor/modelo de extracción se eligen al implementar. La extracción debe admitir texto e imágenes, directamente o mediante conversión/OCR según el proveedor elegido.
+### Cómo se enseña
 
-Componentes:
+1. Cargas su carta antes de la reunión y corriges lo que haga falta.
+2. Marcas su negocio como activo y abres el panel.
+3. Llamas al número de prueba y pides cosas de su carta.
+4. Pides una modificación y confirmas.
+5. Enseñas el pedido en el panel y abres el ticket.
+6. Le cuentas que el siguiente paso sería entrar en su sistema y su impresora.
 
-- Importador: obtiene la fuente, ejecuta extracción y valida el formato de salida.
-- Menú: guarda borrador/publicación y responde a consultas del agente.
-- Retell: conversación, herramientas HTTP y eventos de llamada.
-- Pedidos: validación mínima, guardado transaccional y consulta idempotente.
-- Panel: lectura de pedidos e importaciones.
-- Impresión opcional: adaptador local para el hardware elegido.
+## 9. Cómo está montado
 
-Una tarea persistida de importación con un worker simple evita mantener la petición web abierta durante el procesamiento. Sin microservicios ni infraestructura distribuida. Estado de importación: pendiente, procesando, listo para revisión o error. Reintentar no publica ni duplica productos automáticamente.
+Symfony con controladores, entidades, repositorios y servicios normales. Doctrine, PostgreSQL, Twig y JavaScript sencillo. Versión de PHP y de Symfony, las actuales al empezar.
 
-Reutilizar de autocaller patrones de autenticación, configuración e idempotencia cuando sean útiles. No copiar Lead, CallAttempt, límites de llamadas salientes o sincronización Odoo. No modificar autocaller.
+Partes:
 
-## 8. Datos mínimos
+- **Importador:** recibe el archivo o el texto, llama a OpenAI y comprueba que la respuesta tiene el formato esperado.
+- **Menú:** guarda borrador y publicación, y responde a las consultas del agente.
+- **Retell:** conversación, herramientas HTTP y eventos de llamada.
+- **Pedidos:** validación mínima, guardado en una transacción y consulta repetible.
+- **Panel:** lectura de pedidos, llamadas e importaciones.
+
+La importación se guarda como tarea y la procesa un worker sencillo, para no dejar colgada la petición web. Estados: pendiente, procesando, lista para revisar, error. Reintentar no publica solo ni duplica productos.
+
+De autocaller se pueden copiar patrones de login y de configuración. No se copia Lead, CallAttempt, llamadas salientes ni nada de Odoo. Autocaller no se toca.
+
+Se despliega en el servidor code-hive, en auto-order.code-hive.space. Retell necesita llegar al backend por HTTPS desde Internet.
+
+## 10. Datos
 
 | Entidad | Contenido |
 | --- | --- |
-| Business | Nombre, menú activo y asociación de agente/número de demo |
-| MenuImport | Negocio, fuentes, estado, errores y resultado de extracción |
-| MenuVersion | Negocio, borrador/publicada, fecha |
-| MenuItem | Versión, nombre, categoría/descripcion opcionales, opciones descriptivas, precio opcional y referencia de origen |
-| Call | Cuenta/provider_call_id único, negocio, versión de menú, estado técnico y teléfonos opcionales |
-| Order | Negocio, llamada, referencia, fecha, contacto/modalidad/dirección opcionales, observaciones y marca visto |
-| OrderItem | Pedido, item del menú, nombre copiado, cantidad y modificaciones |
-| WebhookReceipt | Identificador de evento, procesamiento y hash para deduplicación |
-| User | Administrador del panel, credenciales seguras |
+| Business | Nombre, menú activo, si es el negocio activo para la demo |
+| MenuImport | Negocio, archivos o texto de origen, estado, errores, resultado |
+| MenuVersion | Negocio, borrador o publicada, fecha |
+| MenuItem | Versión, nombre, categoría y descripción opcionales, opciones descriptivas, precio opcional |
+| Call | Identificador de llamada de Retell único, negocio, versión de menú, estado, si es simulada |
+| Order | Negocio, llamada, referencia, fecha, nombre, recoger o domicilio, observaciones, total opcional, marca de visto |
+| OrderItem | Pedido, producto del menú, nombre copiado, cantidad, modificaciones, precio copiado opcional |
+| WebhookReceipt | Identificador del evento, si se procesó |
+| User | No hace falta tabla: usuario y contraseña van en la configuración del servidor |
 
-Opciones descriptivas pueden almacenarse como JSON validado. Precios desconocidos son null, nunca cero por defecto. No hay OrderQuote, tarifas de entrega, política de aceptación ni horario obligatorio.
+Las opciones descriptivas se guardan como JSON. Un precio desconocido es null, nunca cero.
 
-Modelo inicial de cantidad: número positivo y unidad textual opcional si está expresada en la carta/petición; no implementar cálculo comercial por peso. El modelo no debe convertir por su cuenta “medio kilo” en unidades ni inventar unidades de venta.
+La cantidad es un número positivo. El modelo no convierte "medio kilo" en unidades por su cuenta.
 
-Una llamada tiene como máximo un pedido, protegido por restricción única en base de datos. Un pedido registrado no se modifica por nuevos webhooks ni cambios de carta.
+Una llamada tiene como mucho un pedido, y lo garantiza una restricción única en la base de datos. Un pedido guardado no cambia porque lleguen más eventos ni porque se publique otra carta.
 
-## 9. Herramientas internas del agente
+## 11. Herramientas del agente
 
-Contratos propuestos de Auto-order, no nombres de endpoints del proveedor:
-
-| Herramienta | Función |
+| Herramienta | Qué hace |
 | --- | --- |
-| get_menu | Obtiene el menú publicado asociado a la llamada, con campos opcionales |
-| create_order | Guarda artículos, cantidades, observaciones y datos aportados después de confirmar el resumen |
-| get_current_order | Recupera el pedido de esa llamada, especialmente ante timeout |
+| get_menu | Devuelve el menú publicado del negocio de esa llamada |
+| create_order | Guarda productos, cantidades, observaciones, nombre y si recoge o se lo llevan |
+| get_current_order | Devuelve el pedido de esa llamada, sobre todo si hubo un timeout |
 
-El contexto autenticado determina negocio y llamada. No permitir que argumentos libres del modelo seleccionen otro negocio.
+El negocio y la llamada salen del contexto autenticado. El modelo no puede elegir otro negocio pasándolo como argumento.
 
-create_order verifica únicamente autenticidad, pertenencia de los artículos al menú de la llamada, cantidades válidas, presencia de artículos y confirmación declarada por el agente. La confirmación declarada se comprueba mediante pruebas conversacionales, no se interpreta como evidencia independiente.
+create_order comprueba que la petición es auténtica, que los productos son del menú de esa llamada, que las cantidades valen, que hay al menos un producto y que el agente declara haber confirmado.
 
-Las observaciones no son instrucciones ejecutables ni opciones comerciales garantizadas. El precio, el plazo y los demás datos opcionales no intervienen en la admisión del pedido.
+Guarda dentro de una transacción, con clave única por llamada. Repetir la petición devuelve el mismo pedido.
 
-En una transacción se busca/crea el pedido con clave única por llamada. Repetir la petición devuelve el mismo pedido. Si los artículos no se identifican, se pide aclaración: la tolerancia a datos ausentes no autoriza inventar productos.
+Si no reconoce los productos, pide aclaración en vez de inventarlos.
 
-Errores útiles: MENU_NOT_READY, UNKNOWN_ITEM, INVALID_QUANTITY, CONFIRMATION_REQUIRED y error técnico. No implementar errores de mínimo de compra, caducidad de cotización, cobertura o precio ausente.
+Errores: MENU_NOT_READY, UNKNOWN_ITEM, INVALID_QUANTITY, CONFIRMATION_REQUIRED y error técnico.
 
-## 10. Retell y telefonía de demo
+## 12. Retell
 
-Configurar manualmente en Retell el agente y número disponibles para la demostración. El panel conserva la asociación esperada; guardarla localmente no configura por sí sola el proveedor.
+El agente y el número ya existen en la cuenta de Retell y se configuran a mano allí. El panel guarda la asociación que espera, pero guardarla no configura Retell.
 
-Comprobar capacidad entrante y coste de la llamada antes de presentar. No prometer que Retell proporciona un número español ni que desviar un número existente siempre es gratuito/posible. La telefonía de cada cliente no forma parte de este desarrollo.
+El negocio se resuelve por cuál está marcado como activo, nunca por el teléfono de quien llama.
 
-Recibir eventos de inicio, final y análisis para seguimiento, con verificación de autenticidad y procesamiento idempotente. Admitir eventos fuera de orden. Resolver el negocio con la asociación de cuenta/agente/número, no con el teléfono del llamante.
+Se reciben los eventos de inicio, fin y análisis de la llamada. Se comprueba que son auténticos. Un evento repetido no hace nada dos veces. Pueden llegar desordenados.
 
-Si una herramienta llega antes del webhook de inicio, resolver su contexto autenticado sin depender de ese orden; si no se puede verificar, rechazar la escritura. Consultar el contrato vigente de Retell al implementar.
+Si una herramienta llega antes del evento de inicio, se resuelve igual. Si no se puede verificar quién llama, se rechaza la escritura.
 
-Referencias técnicas a verificar durante implementación:
+Enlaces a comprobar al implementar:
 
 - [Llamadas entrantes](https://docs.retellai.com/deploy/inbound-call)
 - [Custom functions](https://docs.retellai.com/build/single-multi-prompt/custom-function)
 - [Seguridad de webhooks](https://docs.retellai.com/features/secure-webhook)
-- [Numeración](https://docs.retellai.com/deploy/purchase-number)
 
-## 11. Impresión opcional
+## 13. Lo que sí tiene que aguantar
 
-El resultado obligatorio es el pedido en pantalla y su ticket HTML. Campos desconocidos se omiten o se muestran como “no indicado”; no imprimir un total cero ni plazos ficticios.
-
-Para impresión física, seleccionar un modelo y un equipo de demo. Un conector local recibe trabajos desde el servidor y los envía a esa impresora. No desarrollar aún compatibilidad general ni exponer puertos de la impresora a Internet.
-
-Un fallo de impresión no elimina ni bloquea el pedido. No afirmar “impreso” solo porque el trabajo se envió. Si el resultado del envío es incierto, mostrarlo y evitar reimpresiones automáticas que produzcan duplicados; las copias manuales deben identificarse.
-
-No condicionar el resto del MVP a comprar hardware. El ticket es una comanda de demostración, no factura ni sustituto del TPV.
-
-## 12. Robustez que sí necesitamos
-
-- No inventar productos ni datos ausentes.
-- Poder revisar una extracción incorrecta antes de la presentación.
+- No inventar productos ni datos que no estén en la carta.
+- Poder corregir la carta a mano antes de la demo.
 - No perder ni duplicar pedidos.
-- No mezclar cartas, llamadas o pedidos entre negocios.
-- No fingir éxito ante un error de backend.
-- No romper una llamada por un campo comercial vacío.
-- Mantener el menú publicado disponible aunque la web de origen deje de responder.
+- No mezclar cartas ni pedidos entre negocios.
+- No decir que ha guardado un pedido si ha fallado.
+- No cortar una llamada porque falte un precio o un dato.
+- Seguir funcionando con el menú publicado aunque OpenAI no responda.
 
-Seguridad mínima: login, HTTPS, CSRF del panel, autenticación de herramientas/webhooks, secretos fuera de Git y logs sin datos sensibles completos.
+Seguridad: login, HTTPS, CSRF en el panel, autenticación de las herramientas y los webhooks, secretos fuera de git, y logs sin datos personales completos.
 
-Importador de URLs: solo HTTP/HTTPS público, límites de tamaño/tiempo y redirecciones, bloqueo de destinos locales/privados y metadatos de infraestructura, también tras resolver DNS o redirigir. Sin acceso a sesiones autenticadas.
+Archivos subidos: se comprueba tipo, tamaño y número de páginas o imágenes, y se guardan fuera de rutas ejecutables.
 
-Archivos: validar tipo, tamaño y número de páginas/imágenes; almacenar fuera de rutas ejecutables. El contenido de la carta es dato no confiable: ignorar instrucciones dirigidas al modelo y validar su JSON antes de guardarlo.
+El contenido de la carta no es de fiar. Si trae texto que parece una instrucción para el modelo, se ignora. La respuesta del modelo se valida antes de guardarla.
 
-No resolver una extracción bloqueada desactivando estos controles. Ofrecer carga de archivo. Estas protecciones técnicas no son reglas comerciales.
+## 14. Pruebas
 
-## 13. Pruebas de aceptación
-
-| Caso | Resultado requerido |
+| Caso | Qué tiene que pasar |
 | --- | --- |
-| Importar carta por URL, PDF e imágenes | Menú revisable con productos identificados |
-| Carta completa sin precios | Publicar y tomar pedido sin importe |
-| Precios parciales/“desde” | No inventar cifras ni anunciar total incompleto |
-| Sin tiempos, horarios o reparto | Pedido registrable; no prometer lo desconocido |
-| Extracción dudosa | Aviso localizado y corrección simple |
-| URL inaccesible o documento ilegible | Error claro y alternativa, sin menú inventado |
-| Reimportación fallida | El menú publicado anterior sigue funcionando |
-| Modificación no descrita | Observación visible sin garantía falsa |
-| Nombre ambiguo de producto | El agente pregunta y recoge el correcto |
-| Corrección antes de confirmar | Resumen y pedido reflejan la última versión |
-| Cuelga sin confirmar | Ningún pedido creado desde postanálisis |
-| Doble confirmación o timeout tras guardado | Un único pedido recuperable |
-| Eventos duplicados/desordenados | Sin pedidos dobles ni estados regresivos |
-| Datos opcionales ausentes | Panel y ticket funcionan, sin cero/plazo ficticio |
-| Intento de acceder a otro negocio | Denegado |
-| Cambio de menú durante llamada | Se conserva la versión de esa conversación |
-| Backend caído | El agente no afirma haber guardado |
-| Panel se reconecta | Recupera los pedidos persistidos |
-| URL privada o instrucciones maliciosas en carta | Bloqueo/ignorado según corresponda |
-| Impresora falla, si se habilita | Pedido conservado y fallo visible |
+| Cargar carta por PDF, por imágenes y pegando texto | Sale una lista de productos revisable |
+| Carta sin ningún precio | Se publica y se toma el pedido sin importes |
+| Carta con precios a medias | No se inventan cifras ni se da un total incompleto |
+| Documento ilegible | Error claro, sin menú inventado |
+| Importación fallida | El menú publicado anterior sigue sirviendo |
+| Modificación no prevista | Se ve como observación, sin prometer nada |
+| Nombre de producto ambiguo | El agente pregunta y coge el correcto |
+| Corrección antes de confirmar | El resumen y el pedido reflejan lo último |
+| Cuelga sin confirmar | No se crea pedido |
+| Doble confirmación o timeout tras guardar | Un solo pedido, recuperable |
+| Eventos repetidos o desordenados | Ni pedidos dobles ni estados que retroceden |
+| Faltan nombre o modalidad | El panel y el ticket funcionan igual |
+| Todos los productos con precio | El total cuadra |
+| Algún producto sin precio | No aparece total en ninguna parte |
+| Se publica otra carta durante una llamada | La llamada sigue con su versión |
+| Backend caído | El agente no dice que ha guardado |
+| El panel se reconecta | Vuelven a verse los pedidos guardados |
+| Carta con texto que intenta dar instrucciones al modelo | Se ignora |
 
-Fixtures sintéticos cubren varios formatos y sectores, sin convertirse en catálogo obligatorio de presentación.
+Las pruebas automáticas usan OpenAI y Retell simulados. Una llamada real de verdad se prueba aparte, a mano.
 
-Objetivo de demo: pedido visible en pocos segundos después de guardarse. Registrar tiempos reales; no afirmar pruebas pasadas ni SLA sin medir. Tests automatizados con proveedores simulados; llamada real controlada como aceptación separada.
+Cartas de prueba inventadas, solo para los tests. En una demo se usa la carta real del posible cliente, y sus archivos no se suben al repositorio.
 
-## 14. Plan de implementación
+## 15. Orden de trabajo
 
-1. Symfony, persistencia, login y separación entre negocios.
-2. Importación URL/PDF/imágenes con modelo, vista previa y publicación.
-3. Menú consultable y pedidos con validación mínima e idempotencia.
-4. Panel actualizado y ticket HTML.
-5. Agente y herramientas Retell; eventos de seguimiento.
-6. Preparar la carta real de un posible cliente y ensayar la llamada completa.
-7. Impresión física opcional después de elegir hardware.
+1. Symfony, base de datos y login.
+2. Negocios, subida de PDF/imágenes/texto, extracción con OpenAI, tabla editable y publicar.
+3. Menú consultable y guardado de pedidos con validación mínima.
+4. Panel de pedidos, ticket y simulador de llamada.
+5. Agente y herramientas de Retell, más los eventos.
+6. Lista de llamadas.
+7. Ensayo con la carta real de un posible cliente.
 
-No introducir un motor de gestión comercial para completar estas fases. Proveedor/modelo de extracción, número disponible y hosting se concretan al implementar; no requieren diseñar ahora precios, reparto o preparación.
+## 16. Regla para decidir dudas
 
-## 15. Regla de alcance para el desarrollo
+Si algo hace que la demo deje de funcionar porque la carta no trae precios, ingredientes, tiempos o información del negocio, está mal.
 
-Si una decisión hace que la demo deje de funcionar porque la carta no tiene precios, ingredientes, tiempos o información operativa, contradice este documento.
+Que esté bien hecho significa: entiende su carta más o menos, reconoce lo que no sabe, apunta bien el pedido, lo confirma y no lo pierde.
 
-“Bien montado” significa: entiende su carta, reconoce lo que desconoce, recoge el pedido correcto, lo confirma y lo muestra sin perderlo ni duplicarlo.
-
-El siguiente proyecto, después de captar al cliente, será adaptar la instalación a su operativa. No adelantar ese trabajo al MVP.
+Adaptar la instalación a la operativa real del cliente es el proyecto siguiente, no este.
