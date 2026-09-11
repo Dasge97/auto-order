@@ -10,6 +10,12 @@
         </div>
     </div>
 
+    {% if contrasena_por_defecto %}
+        <div class="flash flash-error">
+            El panel sigue con la contraseña de ejemplo. Cambia ADMIN_PASSWORD_HASH antes de dejarlo accesible desde Internet.
+        </div>
+    {% endif %}
+
     {% if not token_configurado %}
         <div class="flash flash-error">
             El token de las herramientas sigue siendo el de ejemplo. Cambia RETELL_TOOL_TOKEN antes de usar esto de verdad.

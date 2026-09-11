@@ -24,8 +24,16 @@ class RetellSetupController extends AbstractController
         private readonly string $toolToken,
         #[Autowire('%env(RETELL_WEBHOOK_SECRET)%')]
         private readonly string $webhookSecret,
+        #[Autowire('%env(ADMIN_PASSWORD_HASH)%')]
+        private readonly string $adminPasswordHash,
     ) {
     }
+
+    /**
+     * Hash de la contraseña "admin" que trae el proyecto de fábrica. Si sigue puesto en
+     * un servidor accesible desde Internet, cualquiera entra al panel.
+     */
+    private const DEFAULT_PASSWORD_HASH = '$2y$13$fqLZ8KjazhgDn9uPlWxN9eBVieM0aMLiLAv0rWVoupA4NqgNI.OWO';
 
     #[Route('/retell', name: 'app_retell_setup', methods: ['GET'])]
     public function index(Request $request): Response
@@ -42,6 +50,7 @@ class RetellSetupController extends AbstractController
             'webhook_url' => $baseUrl.'/webhook/retell',
             'token_configurado' => '' !== $this->toolToken && 'cambia-esto-en-produccion' !== $this->toolToken,
             'secreto_configurado' => '' !== $this->webhookSecret,
+            'contrasena_por_defecto' => self::DEFAULT_PASSWORD_HASH === $this->adminPasswordHash,
         ]);
     }
 }
