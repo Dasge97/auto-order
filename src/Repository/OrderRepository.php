@@ -24,11 +24,18 @@ class OrderRepository extends ServiceEntityRepository
         return $this->findOneBy(['call' => $call]);
     }
 
-    /** @return list<Order> */
+    /**
+     * Se ordena por id, no por fecha, porque el panel usa el id del primero para
+     * preguntar si han entrado pedidos nuevos. Con dos pedidos en el mismo segundo,
+     * ordenar por fecha daría un id que no es el mayor y la página se recargaría sola
+     * una y otra vez.
+     *
+     * @return list<Order>
+     */
     public function findRecent(int $limit = 100): array
     {
         return $this->createQueryBuilder('o')
-            ->orderBy('o.createdAt', 'DESC')
+            ->orderBy('o.id', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

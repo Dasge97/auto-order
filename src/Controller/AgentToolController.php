@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\Call;
 use App\Entity\Order;
 use App\Order\OrderDraft;
 use App\Order\OrderException;
@@ -44,13 +43,11 @@ class AgentToolController extends AbstractController
         }
 
         $payload = $this->decode($request);
-        $call = $this->callResolver->findOrCreate($this->extractCallId($payload));
+        $callId = $this->extractCallId($payload);
+        $call = $this->callResolver->findOrCreate($callId);
 
         if (null === $call) {
-            return new JsonResponse([
-                'error' => OrderException::MENU_NOT_READY,
-                'mensaje' => 'No hay ningún negocio activo para atender esta llamada.',
-            ], 200);
+            return new JsonResponse($this->describeMissingCall($callId), 200);
         }
 
         $menuVersion = $call->getMenuVersion();
@@ -83,13 +80,11 @@ class AgentToolController extends AbstractController
         }
 
         $payload = $this->decode($request);
-        $call = $this->callResolver->findOrCreate($this->extractCallId($payload));
+        $callId = $this->extractCallId($payload);
+        $call = $this->callResolver->findOrCreate($callId);
 
         if (null === $call) {
-            return new JsonResponse([
-                'error' => OrderException::MENU_NOT_READY,
-                'mensaje' => 'No hay ningún negocio activo para atender esta llamada.',
-            ], 200);
+            return new JsonResponse($this->describeMissingCall($callId), 200);
         }
 
         try {
@@ -149,6 +144,30 @@ class AgentToolController extends AbstractController
             'total_eur' => $order->getTotalAsFloat(),
             'mensaje' => 'El pedido ya está registrado. No lo guardes otra vez.',
         ]);
+    }
+
+    /**
+     * Dos motivos distintos para no tener llamada: que la petición no diga de qué
+     * llamada habla, o que no haya negocio atendiendo. Se distinguen para que el
+     * agente no cuente una cosa por otra.
+     *
+     * @return array<string, mixed>
+     */
+    private function describeMissingCall(string $callId): array
+    {
+        if ('' === $callId) {
+            $this->logger->warning('Una herramienta del agente ha llegado sin identificador de llamada.');
+
+            return [
+                'error' => 'ERROR_TECNICO',
+                'mensaje' => 'No se ha podido identificar esta llamada. No tomes el pedido.',
+            ];
+        }
+
+        return [
+            'error' => OrderException::MENU_NOT_READY,
+            'mensaje' => 'No hay ningún negocio activo para atender esta llamada. Discúlpate y no tomes el pedido.',
+        ];
     }
 
     private function confirmationMessage(Order $order): string
