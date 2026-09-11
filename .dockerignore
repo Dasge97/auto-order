@@ -2,6 +2,7 @@
 .gitignore
 .env.local
 .env.*.local
+secrets.env
 var/
 vendor/
 tests/

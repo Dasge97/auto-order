@@ -20,5 +20,6 @@
 
 # Documentacion de despliegue con rutas y puertos internos del servidor.
 /README_DEPLOY.md
+/secrets.env
 /docker-compose.override.generated.yml
 ###< auto-order ###

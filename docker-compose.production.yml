@@ -4,15 +4,18 @@
 # El puerto lo publica docker-compose.override.generated.yml, y quien saca el
 # servicio a Internet es Traefik.
 #
-# Se levanta siempre con --env-file .env, para que la contraseña de la base de datos
-# salga del mismo fichero que el resto de la configuración.
+# Los secretos viven en secrets.env, que no se versiona. El .env del repositorio solo
+# trae valores por defecto, y lo que venga por el entorno gana sobre ellos.
+#
+# Se levanta siempre con --env-file secrets.env, para que la contraseña de la base de
+# datos salga del mismo fichero que el resto.
 services:
   app:
     build: .
     container_name: deployment_auto-order-app-1
     restart: unless-stopped
     env_file:
-      - .env
+      - secrets.env
     environment:
       APP_ENV: prod
       DATABASE_URL: "postgresql://${POSTGRES_USER:-autoorder}:${POSTGRES_PASSWORD:-autoorder}@database:5432/${POSTGRES_DB:-autoorder}?serverVersion=17&charset=utf8"
@@ -22,7 +25,9 @@ services:
       database:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/login"]
+      # Se busca texto de la página, no solo el código de respuesta: un error grave de
+      # PHP puede salir con código 200 y dejar el contenedor marcado como sano.
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/login | grep -q 'Auto-order'"]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -33,7 +38,7 @@ services:
     container_name: deployment_auto-order-worker-1
     restart: unless-stopped
     env_file:
-      - .env
+      - secrets.env
     environment:
       APP_ENV: prod
       DATABASE_URL: "postgresql://${POSTGRES_USER:-autoorder}:${POSTGRES_PASSWORD:-autoorder}@database:5432/${POSTGRES_DB:-autoorder}?serverVersion=17&charset=utf8"
