@@ -17,6 +17,7 @@
                     <a href="{{ path('app_businesses') }}" class="{{ app.request.attributes.get('_route') starts with 'app_business' ? 'current' : '' }}">Negocios</a>
                     <a href="{{ path('app_calls') }}" class="{{ app.request.attributes.get('_route') starts with 'app_call' ? 'current' : '' }}">Llamadas</a>
                     <a href="{{ path('app_simulator') }}" class="{{ app.request.attributes.get('_route') starts with 'app_simulator' ? 'current' : '' }}">Simular llamada</a>
+                    <a href="{{ path('app_retell_setup') }}" class="{{ app.request.attributes.get('_route') starts with 'app_retell_setup' ? 'current' : '' }}">Retell</a>
                 </nav>
                 <div class="topbar-right">
                     {% set active_business = active_business() %}

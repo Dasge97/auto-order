@@ -20,11 +20,24 @@ No es solo para kebabs. Sirve para cualquier negocio con una carta o una lista d
 
 ## Documentación
 
-La [especificación del MVP](docs/auto-order-mvp.md) recoge el alcance, las decisiones y el orden de trabajo.
+- [Especificación del MVP](docs/auto-order-mvp.md): alcance, decisiones y reglas.
+- [Puesta en marcha](docs/puesta-en-marcha.md): arrancar en local, pruebas, despliegue y configuración de Retell.
 
 ## Estado
 
-Solo documentación. La aplicación todavía no está implementada.
+Aplicación implementada, con 71 pruebas automáticas.
+
+Queda por probar una cosa con medios reales: la lectura de una carta con la clave de OpenAI de verdad, y una llamada de verdad por Retell.
+
+Arranque rápido en local:
+
+```bash
+composer install
+docker run -d --name auto-order-db -e POSTGRES_USER=autoorder -e POSTGRES_PASSWORD=autoorder -e POSTGRES_DB=autoorder -p 55432:5432 postgres:17-alpine
+php bin/console doctrine:migrations:migrate --no-interaction
+php bin/console app:cargar-ejemplo
+php -S 127.0.0.1:8000 -t public bin/dev-router.php
+```
 
 ## Base técnica
 

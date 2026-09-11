@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Configurar Retell · Auto-order{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Configurar Retell</h1>
+            <p class="subtitle">Copia esto en el panel de Retell. Se configura una vez.</p>
+        </div>
+    </div>
+
+    {% if not token_configurado %}
+        <div class="flash flash-error">
+            El token de las herramientas sigue siendo el de ejemplo. Cambia RETELL_TOOL_TOKEN antes de usar esto de verdad.
+        </div>
+    {% endif %}
+
+    {% if not secreto_configurado %}
+        <div class="flash flash-warning">
+            Falta RETELL_WEBHOOK_SECRET. Sin él se rechazan todos los eventos de llamada.
+        </div>
+    {% endif %}
+
+    <div class="card">
+        <h2 style="margin-top:0">1. Instrucciones del agente</h2>
+        <p class="muted small">
+            Pégalas en el prompt del agente.
+            {% if business %}
+                El nombre del negocio ya está puesto: <strong>{{ business.name }}</strong>.
+                Si cambias de negocio activo, vuelve a copiarlas.
+            {% endif %}
+        </p>
+        <textarea readonly style="min-height:280px; font-family:ui-monospace, monospace; font-size:12px">{{ prompt }}</textarea>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-top:0">2. Herramientas</h2>
+        <p class="muted small">Crea tres funciones personalizadas con estos datos. Todas son POST.</p>
+
+        {% for tool in tools %}
+            <h3 style="font-size:15px; margin-bottom:4px">{{ tool.name }}</h3>
+            <p class="small muted" style="margin:0 0 6px">{{ tool.description }}</p>
+            <p class="small" style="margin:0 0 6px"><strong>URL:</strong> <code>{{ tool.url }}</code></p>
+            <p class="small" style="margin:0 0 6px"><strong>Cabecera:</strong> <code>Authorization: Bearer {{ tool.headers.Authorization|replace({'Bearer ': ''}) }}</code></p>
+            <textarea readonly style="min-height:120px; font-family:ui-monospace, monospace; font-size:12px">{{ tool.parameters|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE')) }}</textarea>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h2 style="margin-top:0">3. Webhook de llamadas</h2>
+        <p class="small"><strong>URL:</strong> <code>{{ webhook_url }}</code></p>
+        <p class="muted small" style="margin-bottom:0">
+            Sirve para ver en el panel qué ha pasado en cada llamada. Nunca crea pedidos.
+            La firma se comprueba con la clave de tu cuenta de Retell, guardada en RETELL_WEBHOOK_SECRET.
+        </p>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-top:0">4. Antes de la demostración</h2>
+        <ul class="small">
+            <li>Carga la carta del cliente y publícala.</li>
+            <li>Marca su negocio como el que atiende las llamadas.</li>
+            <li>Vuelve a copiar las instrucciones si has cambiado de negocio.</li>
+            <li>Haz una llamada de prueba tú antes de enseñarlo.</li>
+        </ul>
+    </div>
+{% endblock %}
