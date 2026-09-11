@@ -1,27 +1,31 @@
 # Auto-order
 
-Plataforma de atención telefónica con IA que convierte llamadas en pedidos estructurados para pequeños negocios con catálogo.
+Demo de atención telefónica con IA para captar clientes: el agente lee **la carta del propio negocio**, toma el pedido y lo muestra en un panel.
 
-## Estado
+## Flujo
 
-Repositorio inicial de documentación. La aplicación todavía no está implementada.
+Cargar URL, PDF o imágenes → extraer menú con IA → revisar y publicar → recibir llamada con Retell → confirmar pedido → mostrarlo en el panel.
 
-La especificación se conserva como documento de diseño original; sus referencias a la creación futura del repositorio corresponden al momento en que se redactó. El repositorio ya está creado y contiene dicha especificación.
+No es exclusivamente para kebabs. La misma base sirve para negocios con cartas o listas de productos distintas.
+
+## Lo esencial
+
+- La carta del cliente es el punto de partida; no hay que montar un catálogo manual desde cero.
+- Precios, tiempos, horarios y reparto son información opcional.
+- Si falta un dato, el agente no lo inventa ni bloquea el pedido por ello.
+- Productos identificados, cantidades y observaciones bastan para registrar la demo.
+- Confirmación explícita y persistencia sin pedidos perdidos o duplicados.
+- Panel y ticket HTML; impresión física opcional.
+- Sin cotizaciones, mínimos de compra, gestión de cocina ni integraciones con TPV.
 
 ## Documentación
 
-Consulta la [especificación completa del MVP](docs/auto-order-mvp.md): alcance, reglas de negocio, arquitectura, modelo de datos, herramientas Retell, impresión, seguridad, pruebas y plan de implementación.
+La [especificación vigente del MVP](docs/auto-order-mvp.md) define importación de carta, conversación, datos mínimos, herramientas, pruebas y fases de implementación. Sustituye el alcance anterior.
 
-## Objetivo del MVP
+## Estado y base técnica
 
-Demostrar una llamada real atendida por Retell AI que termina en un pedido validado y persistido, visible en el panel del negocio. La impresión física es una extensión opcional para un equipo concreto.
+Solo documentación; aplicación todavía no implementada.
 
-- Núcleo genérico: catálogo, variantes, opciones, pedidos y entrega al local.
-- Dos negocios ficticios: restauración y floristería.
-- Arquitectura propuesta: Symfony, Doctrine, PostgreSQL y Twig.
-- Proyecto independiente de autocaller, sin dependencia de Odoo ni integración directa con Twilio.
-- Integraciones con el número existente, TPV e impresoras de cada cliente: posteriores y específicas de cada instalación.
+Symfony, Doctrine, PostgreSQL, Twig y Retell AI. Proyecto independiente de autocaller, sin Odoo ni integración directa con Twilio. Modelo/proveedor de extracción a elegir al implementar.
 
-## Siguiente paso
-
-Implementar por fases siguiendo la sección 15 de la especificación. No se deben efectuar compras, llamadas reales ni cambios en servicios externos como parte de las pruebas automatizadas.
+La telefonía habitual, impresora y sistema de cada cliente se estudiarán al preparar su instalación, después de la demostración comercial. No son requisitos de este MVP.
