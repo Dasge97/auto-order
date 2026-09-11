@@ -15,6 +15,7 @@ done
 php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
 php bin/console cache:clear --no-warmup
 php bin/console cache:warmup
+php bin/console assets:install public --no-interaction >/dev/null
 
 mkdir -p var/uploads var/pdf-paginas
 chown -R www-data:www-data var
