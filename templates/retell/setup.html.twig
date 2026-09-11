@@ -38,11 +38,9 @@
     <div class="card">
         <h2 style="margin-top:0">1. Instrucciones del agente</h2>
         <p class="muted small">
-            Pégalas en el prompt del agente.
-            {% if business %}
-                El nombre del negocio ya está puesto: <strong>{{ business.name }}</strong>.
-                Si cambias de negocio activo, vuelve a copiarlas.
-            {% endif %}
+            Pégalas en el prompt del agente. No llevan el nombre del negocio: el agente lo
+            aprende al llamar a get_menu, así que no hay que volver a copiarlas al cambiar
+            de negocio activo.
         </p>
         <textarea readonly style="min-height:280px; font-family:ui-monospace, monospace; font-size:12px">{{ prompt }}</textarea>
     </div>
@@ -74,7 +72,6 @@
         <ul class="small">
             <li>Carga la carta del cliente y publícala.</li>
             <li>Marca su negocio como el que atiende las llamadas.</li>
-            <li>Vuelve a copiar las instrucciones si has cambiado de negocio.</li>
             <li>Haz una llamada de prueba tú antes de enseñarlo.</li>
         </ul>
     </div>

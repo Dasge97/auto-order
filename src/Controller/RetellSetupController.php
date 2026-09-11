@@ -49,7 +49,9 @@ class RetellSetupController extends AbstractController
 
         $business = $this->businesses->findActiveForDemo();
 
-        $prompt = str_replace('{{nombre_negocio}}', $business?->getName() ?? 'el negocio', AgentPrompt::PROMPT);
+        // El prompt no lleva el nombre del negocio: el agente lo aprende llamando a
+        // get_menu. Así no hay que volver a configurar Retell al cambiar de negocio.
+        $prompt = AgentPrompt::PROMPT;
 
         return $this->render('retell/setup.html.twig', [
             'business' => $business,

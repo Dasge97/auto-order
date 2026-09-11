@@ -13,9 +13,14 @@ use PHPUnit\Framework\TestCase;
  */
 class AgentPromptTest extends TestCase
 {
-    public function testLlevaElHuecoParaElNombreDelNegocio(): void
+    /**
+     * El nombre del negocio no va escrito en el prompt: el agente lo saca de get_menu.
+     * Si se colase un nombre fijo, habría que reconfigurar Retell en cada demostración.
+     */
+    public function testNoLlevaNingunNombreDeNegocioEscrito(): void
     {
-        self::assertStringContainsString('{{nombre_negocio}}', AgentPrompt::PROMPT);
+        self::assertStringNotContainsString('{{nombre_negocio}}', AgentPrompt::PROMPT);
+        self::assertStringContainsString('antes de decir una sola palabra, llama a get_menu', AgentPrompt::PROMPT);
     }
 
     /**
@@ -24,7 +29,7 @@ class AgentPromptTest extends TestCase
     public static function reglasImprescindibles(): array
     {
         return [
-            ['Llama a get_menu antes de hablar de productos'],
+            ['antes de decir una sola palabra, llama a get_menu'],
             ['Nunca te'],
             ['Espera a que confirmen'],
             ['Solo si create_order responde'],
